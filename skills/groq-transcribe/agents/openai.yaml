@@ -1,0 +1,4 @@
+interface:
+  display_name: "Groq Transcribe"
+  short_description: "Транскрибировать аудио и видео через Groq"
+  default_prompt: "Use $groq-transcribe to transcribe this audio or video into clean text with timestamps."

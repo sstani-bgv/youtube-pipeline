@@ -1,0 +1,16 @@
+{
+  "title": "REPLACE_WITH_VIDEO_TITLE",
+  "description": "REPLACE_WITH_VIDEO_DESCRIPTION",
+  "tags": [
+    "first tag",
+    "second tag"
+  ],
+  "video": "/absolute/path/to/video.mp4",
+  "thumbnail": "/absolute/path/to/thumbnail.png",
+  "expected_channel_id": "UC_REPLACE_WITH_YOUR_CHANNEL_ID",
+  "privacy": "private",
+  "category_id": "22",
+  "default_language": "ru",
+  "default_audio_language": "ru",
+  "made_for_kids": null
+}
