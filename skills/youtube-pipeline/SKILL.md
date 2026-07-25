@@ -1,146 +1,97 @@
 ---
 name: youtube-pipeline
-description: "Подготавливать и безопасно публиковать видео на YouTube: создать структуру проекта, при необходимости получить транскрипт, сгенерировать title/description/tags и идеи обложек, проверить официальные лимиты, выполнить dry-run и загрузить ролик через YouTube Data API с защитой от неверного канала и дублей. Использовать для запросов «подготовь видео к YouTube», «собери метаданные», «загрузи ролик», «доведи до YouTube Studio», а также YouTube publishing/upload workflow. Для A/B-тестов, cards и end screen поддерживать опциональный yt-studio adapter."
+description: "Оркестрировать полный переносимый YouTube-конвейер от финального видео до упаковки, Shorts/Reels, проверки, безопасной загрузки и Studio-функций. Использовать для запросов «доведи видео до YouTube», «запусти весь YouTube pipeline», «сделай метаданные, обложки и Shorts», а также для возобновления частично завершённого проекта. Делегировать фазы установленным youtube-* скиллам и принимать их результаты через файлы и компактные receipts."
 ---
 
 # YouTube Pipeline
 
-Работать с одним каталогом проекта. Не зависеть от имени пользователя, конкретного
-репозитория, канала или структуры чужих папок.
+Быть корневым оркестратором. Не выполнять все production-задачи в одном контексте.
+Работать с переносимым каталогом проекта и не зависеть от имени пользователя,
+конкретного канала или структуры чужих папок.
 
-## Безопасность
+## Состав конвейера
 
-- Считать загрузку, изменение visibility и Studio-операции внешними мутациями.
-- Всегда сначала показывать dry-run.
-- Не выполнять `--apply`, пока пользователь явно не разрешил загрузку.
-- По умолчанию использовать `private`.
-- Для `public` требовать отдельное явное разрешение и флаг `--allow-public`.
-- Перед мутацией сверять активный канал с `expected_channel_id`.
-- Никогда не читать, печатать, коммитить или пересылать OAuth token, client secret,
-  Groq key, cookies и session-файлы.
-- Не открывать обычный браузерный профиль пользователя для автоматизации Studio.
-- Если `upload_receipt.json` уже существует, сначала проверить видео через API и
-  продолжить незавершённые шаги; не создавать дубль.
+1. **Brief и preflight** — проверить финальное видео, authority на удалённые действия
+   и создать проект через `scripts/init_project.py`.
+2. **Транскрибация** — вызвать `$groq-transcribe`, если transcript отсутствует.
+3. **Generation** — вызвать `$youtube-generation`. Он параллельно делегирует:
+   `$youtube-title-generator`, `$youtube-seo-tags`,
+   `$youtube-description-writer`, `$youtube-thumbnail-text-generator`,
+   `$youtube-thumbnail-image-generator`, `$shorts-cutter` и
+   `$make-reels-video`.
+4. **Validation и upload** — вызвать `$youtube-meta-validator`, затем
+   `$youtube-uploader` либо установленный `ytstudio-safe`.
+5. **Studio-only функции** — A/B/C, cards, end screen и related video выполнять
+   через `ytstudio-safe`, всегда dry-run-first.
+6. **Audit** — проверить файлы, receipts и live state; только после этого завершать.
 
-## Вход
-
-Минимум:
-
-- финальный локальный видеофайл;
-- тема, аудитория и обещание ролика;
-- язык;
-- желаемая visibility;
-- разрешение или запрет на удалённые изменения.
-
-Если контекста мало, задать один короткий набор вопросов до генерации метаданных.
-Не спрашивать повторно то, что можно извлечь из brief, transcript или видео.
-
-## Рабочая структура
-
-Создать каталог проекта:
-
-```bash
-python3 "<skill-dir>/scripts/init_project.py" "<project-dir>" \
-  --video "<absolute-video-path>" --language ru
-```
-
-Получится:
+## Структура проекта
 
 ```text
 project/
 ├── brief.md
 ├── publish.json
 ├── transcript/
+├── meta/
+│   ├── titles.md
+│   ├── tags.md
+│   ├── description.md
+│   └── thumbnails.md
 ├── thumbnails/
-└── upload_receipt.json   # только после реальной загрузки
+├── shorts/
+└── receipts/
 ```
 
-Не класть OAuth-файлы и токены внутрь проекта.
+Видео и credentials не класть внутрь скилла или git-репозитория.
 
-## Процесс
+## Оркестрация
 
-1. Создать или прочитать каталог проекта.
-2. Заполнить `brief.md`: зритель, проблема, обещание, ключевые факты, CTA,
-   ограничения и tone of voice.
-3. Если нужен текст речи и транскрипта нет, использовать установленный
-   `$groq-transcribe` или другой доступный транскрибатор. Облачную отправку аудио
-   согласовать, если файл может быть конфиденциальным.
-4. Сгенерировать три независимые гипотезы заголовка. Выбрать основной заголовок,
-   но сохранить A/B/C в `brief.md` или отдельной заметке.
-5. Сгенерировать описание по реальному содержанию. Не придумывать ссылки,
-   таймкоды, продукты и факты.
-6. Сгенерировать компактный список тегов. Учитывать, что title, thumbnail и
-   description важнее тегов; теги особенно полезны для частых опечаток.
-7. Подготовить 1–3 разные концепции обложки. В `publish.json` указывать только
-   реально существующий основной файл.
-8. Заполнить `publish.json` по `assets/project-template/publish.example.json`.
-9. Запустить validator и исправить все ошибки. До OAuth пустой channel ID даёт
-   warning; перед реальной загрузкой он обязателен:
+- Один root-agent владеет общим state.
+- Каждой фазе назначать owned outputs; child-agent не меняет общий state.
+- Независимые metadata-задачи и Shorts запускать параллельно.
+- Повторный запуск пропускает уже валидные outputs и не создаёт дубли.
+- Длинные логи держать в `/tmp`; root принимает компактный JSON receipt.
+- Production-fail сначала исправляет owning agent и повторяет QA.
 
-```bash
-python3 "<skill-dir>/scripts/validate_project.py" "<project-dir>"
+Минимальный receipt:
+
+```json
+{
+  "task": "youtube-title-generator",
+  "status": "done",
+  "output_files": ["meta/titles.md"],
+  "qa": {"verdict": "pass"},
+  "mutation": {"applied": false},
+  "error": null
+}
 ```
 
-10. Показать пользователю итоговые title, description, tags, thumbnail, channel ID,
-    visibility и точную команду загрузки.
-11. Сначала выполнить upload dry-run без `--apply`.
-12. После явного разрешения выполнить apply с точным confirm.
-13. Проверить receipt и live video через API. Вернуть Studio URL, watch URL,
-    visibility и известные незакрытые шаги.
-14. Studio-only функции выполнять только если пользователь отдельно установил
-    адаптер и принял риск private API. Читать `references/STUDIO.md`.
+## Безопасность
 
-## Команды официального uploader
+- До любой загрузки показывать dry-run.
+- По умолчанию использовать `private`.
+- `public`, schedule и внешняя публикация требуют явного разрешения пользователя.
+- Перед мутацией сверять активный channel ID с ожидаемым.
+- Не печатать и не коммитить Groq key, OAuth JSON/token, cookies или Studio session.
+- Не продолжать после auth mismatch, validator error или неполного receipt.
 
-Одноразовая OAuth-проверка:
+## Два транспорта YouTube
 
-```bash
-uv run --with google-api-python-client --with google-auth-oauthlib \
-  "<skill-dir>/scripts/upload_youtube.py" --check-auth
-```
+**Login-only:** `ytstudio-safe` использует отдельный браузерный профиль. Пользователь
+только входит в Google/YouTube и выбирает канал. Это неофициальный private API:
+обязательно сообщить риск и использовать test channel для первого запуска.
 
-Dry-run не требует Google-библиотек:
+**Official API:** `$youtube-uploader` использует YouTube Data API. Он стабильнее,
+но Google требует один раз создать Desktop OAuth client. Полностью читать
+`references/SETUP.md` перед настройкой.
 
-```bash
-python3 "<skill-dir>/scripts/upload_youtube.py" --project "<project-dir>"
-```
+## Completion gate
 
-Реальная загрузка:
+Не завершать, пока не подтверждены:
 
-```bash
-uv run --with google-api-python-client --with google-auth-oauthlib \
-  "<skill-dir>/scripts/upload_youtube.py" --project "<project-dir>" \
-  --apply --confirm "UPLOAD:<video-filename>"
-```
-
-Для `public` дополнительно передать `--allow-public`, но только после отдельного
-разрешения пользователя.
-
-## Проверка метаданных
-
-- title: непустой, максимум 100 Unicode-символов, без `<` и `>`;
-- description: максимум 5000 UTF-8 байт, без `<` и `>`;
-- tags: список строк; API-бюджет максимум 500 символов с учётом запятых и кавычек
-  вокруг тегов с пробелами;
-- thumbnail для API: PNG/JPEG, максимум 2 MB;
-- `expected_channel_id`: реальный ID выбранного пользователем канала;
-- video/thumbnail: абсолютные либо относительные к каталогу проекта пути;
-- made for kids: заменить начальный `null` на явный boolean; не угадывать при
-  сомнении;
-- visibility: `private`, `unlisted` или `public`.
-
-## Подключение
-
-Если OAuth ещё не настроен, полностью прочитать `references/SETUP.md`. Не пытаться
-угадывать настройки Google Cloud и не просить пользователя прислать секретный JSON.
-
-## Завершение
-
-Сообщить:
-
-- что создано локально;
-- выполнялась ли удалённая мутация;
-- активный channel ID и совпал ли он с ожидаемым;
-- video ID, Studio URL, watch URL и live visibility;
-- применена ли обложка;
-- что осталось сделать вручную или через опциональный Studio adapter.
+- metadata и `publish.json` прошли validator;
+- long-form upload существует либо явно не был разрешён;
+- все запрошенные thumbnails/Shorts имеют QA receipt;
+- upload не продублирован;
+- visibility соответствует authority;
+- Studio-only операции либо применены, либо явно отмечены как необязательные/blocked.

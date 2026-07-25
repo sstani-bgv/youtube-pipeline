@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Validator"
+  short_description: "Проверить проект перед upload"
+  default_prompt: "Use $youtube-meta-validator to validate the complete YouTube project."

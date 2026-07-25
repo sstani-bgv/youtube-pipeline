@@ -1,0 +1,4 @@
+interface:
+  display_name: "Thumbnail Images"
+  short_description: "Сгенерировать изображения обложек"
+  default_prompt: "Use $youtube-thumbnail-image-generator to generate missing thumbnail images from approved concepts."

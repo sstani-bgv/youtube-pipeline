@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Uploader"
+  short_description: "Безопасно загрузить видео через API"
+  default_prompt: "Use $youtube-uploader to dry-run and safely upload the validated project."

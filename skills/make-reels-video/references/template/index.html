@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920">
+    <title>Reels Motion Graphics — Template</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,600;0,700;0,800;0,900&display=swap");
+
+      :root { --magenta:#ff1f8e; --coral:#ff6a3d; --yellow:#f4c84b; --ink:#0e0f12; --soft:#c9c9c9; }
+      body { margin:0; background:#000; font-family:"Montserrat",system-ui,sans-serif; }
+      #root { position:relative; width:1080px; height:1920px; overflow:hidden; background:#000; }
+
+      #base { position:absolute; inset:0; width:1080px; height:1920px; object-fit:cover; }
+      #scrim { position:absolute; inset:0; pointer-events:none;
+        background:
+          linear-gradient(180deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,0) 24%),
+          linear-gradient(0deg,  rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 22%); }
+
+      /* HOOK */
+      #hook { position:absolute; top:78px; left:0; right:0; padding:0 70px; text-align:center; box-sizing:border-box; }
+      #hook .line { display:block; font-weight:900; font-size:100px; line-height:.98; letter-spacing:-.01em;
+        text-transform:uppercase; color:#fff; text-shadow:0 8px 28px rgba(0,0,0,.55); margin:0; }
+      #hook .accent b { color:var(--magenta); font-weight:900; }
+
+      /* big list number — top-right corner (subject is centered) */
+      #num { position:absolute; right:80px; top:150px; font-weight:300; font-size:150px; color:#fff;
+        text-shadow:0 6px 22px rgba(0,0,0,.5); line-height:1; }
+
+      /* floating PiP polaroid card — top-left corner, clear of centered face */
+      #card { position:absolute; top:150px; left:50px; width:300px; border-radius:22px; overflow:hidden;
+        background:#fff; box-shadow:0 30px 70px rgba(0,0,0,.55); }
+      #card img { display:block; width:100%; height:100%; object-fit:cover; }
+      #card .pin { position:absolute; left:16px; top:14px; background:var(--coral); color:#fff; font-weight:800;
+        font-size:24px; padding:4px 16px; border-radius:999px; text-transform:uppercase; letter-spacing:.02em; }
+
+      /* SPLIT-SCREEN grid (bottom half) */
+      #grid { position:absolute; left:0; bottom:0; width:1080px; height:960px;
+        display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(2,1fr); gap:3px; background:#000; }
+      #grid .tile { position:relative; overflow:hidden; }
+      #grid .tile img { width:100%; height:100%; object-fit:cover; display:block; }
+      #grid .tile .stat { position:absolute; left:12px; bottom:12px; color:#fff; font-weight:700; font-size:26px;
+        text-shadow:0 2px 8px rgba(0,0,0,.8); }
+      #seam { position:absolute; left:0; bottom:960px; width:1080px; height:5px; background:var(--magenta);
+        box-shadow:0 0 22px rgba(255,31,142,.7); }
+      #seamlabel { position:absolute; left:0; right:0; bottom:986px; text-align:center; color:#fff;
+        font-weight:800; font-size:40px; text-transform:uppercase; letter-spacing:.02em;
+        text-shadow:0 4px 16px rgba(0,0,0,.7); }
+      #seamlabel b { color:var(--yellow); }
+
+      /* PHONE mockup PiP */
+      #phone { position:absolute; top:150px; left:60px; width:280px; height:560px; border-radius:44px;
+        background:#0c0c0e; padding:12px; box-sizing:border-box; box-shadow:0 36px 80px rgba(0,0,0,.6); }
+      #phone .screen { position:relative; width:100%; height:100%; border-radius:34px; overflow:hidden; background:#000; }
+      #phone .screen img { width:100%; height:100%; object-fit:cover; display:block; }
+      #phone .notch { position:absolute; top:14px; left:50%; transform:translateX(-50%); width:96px; height:26px;
+        background:#0c0c0e; border-radius:999px; z-index:2; }
+
+      /* karaoke subtitle */
+      .sub { position:absolute; left:0; right:0; bottom:300px; padding:0 90px; text-align:center; box-sizing:border-box;
+        font-weight:700; font-size:60px; color:#fff; line-height:1.12; text-shadow:0 4px 18px rgba(0,0,0,.6); }
+      .sub .hl { color:var(--coral); }
+
+      /* CTA */
+      #cta { position:absolute; left:0; right:0; bottom:280px; text-align:center; padding:0 70px; box-sizing:border-box; }
+      #cta .pill { display:inline-block; background:var(--magenta); color:#fff; font-weight:800; font-size:58px;
+        text-transform:uppercase; letter-spacing:.02em; padding:22px 48px; border-radius:999px;
+        box-shadow:0 20px 50px rgba(255,31,142,.4); }
+      #cta .sm { margin-top:22px; font-weight:600; font-size:38px; color:var(--soft); text-shadow:0 3px 14px rgba(0,0,0,.6); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="reels-demo" data-start="0" data-width="1080" data-height="1920" data-duration="16">
+
+      <!-- base talking head (DIRECT child of root) -->
+      <video id="base" class="clip" src="media/base.mp4" data-start="0" data-duration="16" data-track-index="0" muted playsinline></video>
+      <div id="scrim" class="clip" data-start="0" data-duration="16" data-track-index="1"></div>
+
+      <!-- BEAT 1 — HOOK (0–3s) -->
+      <div id="hook" class="clip" data-start="0" data-duration="3.0" data-track-index="6">
+        <span class="line" id="hk1">ОДИН АГЕНТ</span>
+        <span class="line accent" id="hk2">ЗАМЕНИЛ <b>ОТДЕЛ</b></span>
+      </div>
+
+      <!-- BEAT 2 — PiP polaroid card + list number (3.2–6.2s) -->
+      <div id="num" class="clip" data-start="3.2" data-duration="3.0" data-track-index="4">1.</div>
+      <div id="card" class="clip" data-start="3.2" data-duration="3.0" data-track-index="7">
+        <img src="media/card.jpg" alt="proof">
+        <span class="pin">пруф</span>
+      </div>
+
+      <!-- BEAT 3 — SPLIT-SCREEN grid (6.4–10.2s) -->
+      <div id="grid" class="clip" data-start="6.4" data-duration="3.8" data-track-index="5">
+        <div class="tile"><img src="media/tile1.jpg"><span class="stat">👁 76,8 тыс.</span></div>
+        <div class="tile"><img src="media/tile2.jpg"><span class="stat">👁 284 тыс.</span></div>
+        <div class="tile"><img src="media/tile3.jpg"><span class="stat">👁 51,2 тыс.</span></div>
+        <div class="tile"><img src="media/tile4.jpg"><span class="stat">👁 38,4 тыс.</span></div>
+        <div class="tile"><img src="media/tile5.jpg"><span class="stat">👁 120 тыс.</span></div>
+        <div class="tile"><img src="media/tile6.jpg"><span class="stat">👁 92,1 тыс.</span></div>
+      </div>
+      <div id="seam" class="clip" data-start="6.4" data-duration="3.8" data-track-index="6"></div>
+
+      <!-- BEAT 4 — PHONE mockup PiP (10.4–13.2s) -->
+      <div id="phone" class="clip" data-start="10.4" data-duration="2.8" data-track-index="7">
+        <div class="screen"><div class="notch"></div><img src="media/phone.jpg"></div>
+      </div>
+
+      <!-- BEAT 5 — CTA (13.4–16s) -->
+      <div id="cta" class="clip" data-start="13.4" data-duration="2.6" data-track-index="8">
+        <div class="pill">сохрани</div>
+        <div class="sm">и подпишись, чтобы собрать такого же →</div>
+      </div>
+
+      <!-- KARAOKE SUBTITLES -->
+      <div class="sub clip" id="s1" data-start="0.5" data-duration="2.3" data-track-index="9">
+        смотри что он делает <span class="hl">сам</span></div>
+      <div class="sub clip" id="s2" data-start="3.3" data-duration="2.7" data-track-index="9">
+        пруф залетает <span class="hl">поверх</span></div>
+      <div class="sub clip" id="s3" data-start="6.6" data-duration="3.4" data-track-index="9" style="bottom:1006px;">
+        так выглядит <span class="hl">твой контент</span></div>
+      <div class="sub clip" id="s4" data-start="10.6" data-duration="2.4" data-track-index="9">
+        или телефон в <span class="hl">углу</span></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // BEAT 1 — HOOK
+      tl.from("#hk1", { y:36, scale:0.92, opacity:0, duration:0.45, ease:"back.out(2)" }, 0.15);
+      tl.from("#hk2", { y:36, scale:0.92, opacity:0, duration:0.45, ease:"back.out(2)" }, 0.40);
+      tl.to("#hook",  { opacity:0, y:-20, duration:0.3, ease:"power2.in" }, 2.55);
+
+      // BEAT 2 — list number + PiP card
+      tl.fromTo("#num", { x:-30, opacity:0 }, { x:0, opacity:1, duration:0.5, ease:"power3.out" }, 3.3);
+      tl.to("#num", { opacity:0, duration:0.3, ease:"power2.in" }, 5.9);
+      tl.fromTo("#card",
+        { opacity:0, scale:0.86, rotation:8, y:24 },
+        { opacity:1, scale:1, rotation:-4, y:0, duration:0.5, ease:"back.out(2.2)" }, 3.3);
+      tl.to("#card", { y:-14, rotation:-2.5, duration:2.0, ease:"sine.inOut" }, 3.9);
+      tl.to("#card", { opacity:0, scale:0.96, duration:0.35, ease:"power2.in" }, 5.85);
+
+      // BEAT 3 — SPLIT-SCREEN grid
+      tl.fromTo("#grid", { yPercent:60, opacity:0 }, { yPercent:0, opacity:1, duration:0.5, ease:"power3.out" }, 6.4);
+      tl.from("#grid .tile", { opacity:0, scale:0.9, duration:0.3, stagger:0.06, ease:"back.out(1.8)" }, 6.7);
+      tl.from("#seam", { scaleX:0, transformOrigin:"left center", duration:0.45, ease:"power2.out" }, 6.5);
+      tl.to(["#grid","#seam"], { yPercent:60, opacity:0, duration:0.4, ease:"power2.in" }, 9.85);
+
+      // BEAT 4 — PHONE mockup PiP
+      tl.fromTo("#phone",
+        { opacity:0, scale:0.86, rotation:-9, y:24 },
+        { opacity:1, scale:1, rotation:-4, y:0, duration:0.5, ease:"back.out(2)" }, 10.4);
+      tl.to("#phone", { y:-12, rotation:-2, duration:2.0, ease:"sine.inOut" }, 10.9);
+      tl.to("#phone", { opacity:0, scale:0.96, duration:0.35, ease:"power2.in" }, 12.9);
+
+      // BEAT 5 — CTA
+      tl.from("#cta .pill", { scale:0.8, opacity:0, duration:0.4, ease:"back.out(2.6)" }, 13.45);
+      tl.from("#cta .sm",   { y:16, opacity:0, duration:0.35, ease:"power3.out" }, 13.75);
+
+      // SUBTITLES — snappy pop per phrase
+      [["#s1",0.55],["#s2",3.35],["#s3",6.65],["#s4",10.65]].forEach(([sel,t]) => {
+        tl.from(sel, { y:22, scale:0.94, opacity:0, duration:0.28, ease:"back.out(2.4)" }, t);
+      });
+
+      window.__timelines["reels-demo"] = tl;
+    </script>
+  </body>
+</html>

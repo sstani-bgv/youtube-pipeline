@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Generation"
+  short_description: "Создать metadata, thumbnails и Shorts"
+  default_prompt: "Use $youtube-generation to generate all local YouTube packaging assets without uploading."

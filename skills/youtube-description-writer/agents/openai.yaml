@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Description"
+  short_description: "Написать фактическое описание ролика"
+  default_prompt: "Use $youtube-description-writer to write the YouTube description from the supplied project facts."

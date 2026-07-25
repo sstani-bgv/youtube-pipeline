@@ -1,0 +1,4 @@
+interface:
+  display_name: "Make Reels Video"
+  short_description: "Произвести один вертикальный Short"
+  default_prompt: "Use $make-reels-video to produce and QA one vertical video from the selected segment."

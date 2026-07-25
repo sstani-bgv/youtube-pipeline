@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Tags"
+  short_description: "Подготовить валидные YouTube tags"
+  default_prompt: "Use $youtube-seo-tags to create relevant YouTube tags from the brief and transcript."

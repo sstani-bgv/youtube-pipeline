@@ -1,0 +1,4 @@
+interface:
+  display_name: "Thumbnail Concepts"
+  short_description: "Создать A/B/C концепции обложек"
+  default_prompt: "Use $youtube-thumbnail-text-generator to create three distinct thumbnail concepts."

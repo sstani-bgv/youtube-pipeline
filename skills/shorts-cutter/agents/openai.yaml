@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shorts Cutter"
+  short_description: "Отобрать и произвести пакет Shorts"
+  default_prompt: "Use $shorts-cutter to select moments and orchestrate isolated Shorts production."

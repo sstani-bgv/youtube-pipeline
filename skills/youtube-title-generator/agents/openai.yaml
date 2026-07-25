@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Titles"
+  short_description: "Создать три A/B/C заголовка"
+  default_prompt: "Use $youtube-title-generator to create and rank distinct YouTube title hypotheses."
